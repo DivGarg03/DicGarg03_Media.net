@@ -1,9 +1,16 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { TargetingCriteria, CreativeAsset, CampaignMetrics, Insight, Anomaly, CompanyOverview } from "../types";
 
-// Initialize Gemini Client
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Helper to get AI instance lazily
+// This prevents the app from crashing on load if the API Key is missing in the environment
+const getAI = () => {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    console.warn("AdPilot: No API Key found in environment variables.");
+    throw new Error("API Key is missing. Please configure your .env file or GitHub Secrets.");
+  }
+  return new GoogleGenAI({ apiKey });
+};
 
 // ---------------------------------------------------------
 // 0. Company Overview Analysis
@@ -14,6 +21,7 @@ export const generateCompanyOverview = async (
   websiteUrl: string,
   industry: string
 ): Promise<CompanyOverview> => {
+  const ai = getAI();
   const model = 'gemini-2.5-flash';
   
   const prompt = `
@@ -77,8 +85,9 @@ export const generateTargetingFromBusinessInfo = async (
   businessName: string,
   industry: string,
   websiteUrl: string,
-  platform: string // Added Platform Context
+  platform: string
 ): Promise<TargetingCriteria> => {
+  const ai = getAI();
   const model = 'gemini-2.5-flash';
 
   const prompt = `
@@ -120,8 +129,9 @@ export const generateTargetingFromText = async (
   businessName: string,
   industry: string,
   description: string,
-  platform: string // Added Platform Context
+  platform: string
 ): Promise<TargetingCriteria> => {
+  const ai = getAI();
   const model = 'gemini-2.5-flash';
   
   const prompt = `
@@ -166,8 +176,9 @@ export const generateCreativeCopy = async (
   businessName: string,
   industry: string,
   targeting: TargetingCriteria,
-  platform: string // Added Platform Context
+  platform: string
 ): Promise<Partial<CreativeAsset>> => {
+  const ai = getAI();
   const model = 'gemini-2.5-flash';
   
   const prompt = `
@@ -216,6 +227,7 @@ export const generateAdImage = async (
   funnelStage: string,
   targeting: TargetingCriteria
 ): Promise<string> => {
+  const ai = getAI();
   const model = 'gemini-2.5-flash-image';
 
   const prompt = `
@@ -250,9 +262,9 @@ export const generateAdImage = async (
 // ---------------------------------------------------------
 
 export const generateInsights = async (metrics: CampaignMetrics): Promise<{ insights: Insight[], anomaly: Anomaly }> => {
+  const ai = getAI();
   const model = 'gemini-2.5-flash';
 
-  // We summarize the metrics into a string for the prompt
   const metricsSummary = `
     Impressions: ${metrics.impressions}
     Clicks: ${metrics.clicks}
@@ -316,6 +328,7 @@ export const generateCustomInsight = async (
   metrics: CampaignMetrics,
   query: string
 ): Promise<string> => {
+  const ai = getAI();
   const model = 'gemini-2.5-flash';
   
   const metricsSummary = JSON.stringify(metrics, null, 2);
